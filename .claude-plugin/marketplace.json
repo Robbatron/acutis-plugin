@@ -1,0 +1,27 @@
+{
+  "name": "acutis-plugin",
+  "owner": {
+    "name": "Robert Delfs",
+    "email": "robbatron@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "Acutis — Zero Trust security verification for AI-generated code.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "acutis",
+      "source": ".",
+      "description": "Automatic security scanning for AI-generated code. Stop hook blocks completion until XSS and SQL Injection vulnerabilities are verified via mcp.acutis.dev.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Robert Delfs"
+      },
+      "homepage": "https://acutis.dev",
+      "repository": "https://github.com/Robbatron/acutis-plugin",
+      "license": "MIT",
+      "keywords": ["security", "xss", "sql-injection", "verification", "mcp", "zero-trust"],
+      "category": "security"
+    }
+  ]
+}

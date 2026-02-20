@@ -1,0 +1,20 @@
+{
+  "name": "acutis",
+  "version": "1.0.0",
+  "description": "Zero Trust security verification for AI-generated code. Formally verifies code for XSS (CWE-79) and SQL Injection (CWE-89) using property lattice verification.",
+  "author": {
+    "name": "Robert Delfs",
+    "url": "https://github.com/Robbatron"
+  },
+  "homepage": "https://acutis.dev",
+  "repository": "https://github.com/Robbatron/acutis-plugin",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "xss",
+    "sql-injection",
+    "verification",
+    "mcp",
+    "zero-trust"
+  ]
+}
