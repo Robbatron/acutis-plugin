@@ -56,16 +56,53 @@ Returns: `ALLOW` (safe), `BLOCK_VIOLATION` (vulnerability found, with remediatio
 
 ```bash
 # Disable without uninstalling
-/plugin disable acutis@acutis-plugin
+claude plugin disable acutis@acutis-plugin
 
 # Re-enable
-/plugin enable acutis@acutis-plugin
-
-# Completely remove
-/plugin uninstall acutis@acutis-plugin
+claude plugin enable acutis@acutis-plugin
 
 # Update to latest
-/plugin marketplace update acutis-plugin
+claude plugin update acutis@acutis-plugin
+
+# Completely remove
+claude plugin uninstall acutis@acutis-plugin
+```
+
+## Updating
+
+### Version bumps
+
+When you release new plugin changes, **always bump the version** in both:
+- `.claude-plugin/plugin.json` → `"version"` field
+- `.claude-plugin/marketplace.json` → `"metadata.version"` and `"plugins[0].version"` fields
+
+Claude Code uses the version to decide whether an update is available. If you change files but don't bump the version, `claude plugin update` will report "already at latest".
+
+### If `plugin update` doesn't pick up changes
+
+Claude Code has **two layers of cache**:
+
+| Cache | Location | Purpose |
+|-------|----------|---------|
+| Marketplace cache | `~/.claude/plugins/marketplaces/acutis-plugin/` | Local clone of the GitHub repo |
+| Install cache | `~/.claude/plugins/cache/acutis-plugin/` | Versioned snapshot used at runtime |
+
+`plugin update` compares the version in the marketplace cache against the install cache. If the marketplace cache is stale, the update won't see the new version even though GitHub has it.
+
+**Fix: clear both caches and reinstall**
+```bash
+# 1. Clear both caches
+rm -rf ~/.claude/plugins/marketplaces/acutis-plugin
+rm -rf ~/.claude/plugins/cache/acutis-plugin
+
+# 2. Reinstall (fetches fresh from GitHub)
+claude plugin uninstall acutis@acutis-plugin
+claude plugin install acutis@acutis-plugin
+```
+
+You can verify the installed version with:
+```bash
+claude plugin list
 ```
 
 ## Requirements
