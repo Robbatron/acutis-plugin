@@ -44,7 +44,7 @@ mcp__acutis__scan_code({
 ## Handling Results
 
 - **ALLOW**: Safe. Proceed.
-- **BLOCK_VIOLATION**: Vulnerability found. Read remediation, fix code, re-scan.
+- **BLOCK_VIOLATION**: Vulnerability found. You MUST fix the code or adjust the contract. Do NOT dismiss as a false positive. If code is safe via an allowlist guard, change the sink to `SafeOutput`.
 - **BLOCK_INCOMPLETE**: Contract issue. Common fixes:
   - "missing coverage for X" → Add X as a sink. Use `SafeOutput` for non-security functions.
   - "missing witness coverage" → Do NOT write witnesses. Simplify your contract or restructure code so user input doesn't reach the sink through untraceable paths (f-strings, string formatting).
@@ -67,7 +67,13 @@ transforms: [{"name": "escape", "effect": "EscapesHTML"}]
 sinks: [{"name": "db.execute", "category": "SQLQuery"}]
 ```
 
-**Dynamic ORDER BY / table names**: The scanner can't trace allowlist guards. Use a dictionary mapping user input to hardcoded SQL strings so user input never reaches the query.
+**Dynamic ORDER BY / table names**: The scanner can't trace allowlist/if-guard control flow. Two options:
+1. Refactor: use a dictionary mapping user input to hardcoded SQL strings so user input never reaches the query.
+2. If the code validates input against an allowlist before the query, declare the sink as `SafeOutput` (the allowlist makes it safe, but the scanner can't prove it):
+```
+sinks: [{"name": "cursor.execute", "category": "SafeOutput"}]
+// No transforms needed — SafeOutput has no prohibited properties
+```
 
 ## Quick Reference
 
