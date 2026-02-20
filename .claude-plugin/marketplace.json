@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "acutis",
-      "source": ".",
+      "source": "./",
       "description": "Automatic security scanning for AI-generated code. Stop hook blocks completion until XSS and SQL Injection vulnerabilities are verified via mcp.acutis.dev.",
       "version": "1.0.0",
       "author": {
