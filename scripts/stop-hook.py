@@ -37,7 +37,9 @@ SKIP_PATTERNS = {
 
 WRITE_TOOLS = {"Write", "Edit", "write", "edit", "editFiles", "createFile"}
 
-SCAN_TOOL_NAMES = {"mcp__acutis__scan_code", "scan_code", "acutis__scan_code"}
+# Substring match — plugin namespacing can prefix tool names
+# (e.g. "plugin:acutis:mcp__acutis__scan_code")
+SCAN_TOOL_KEYWORD = "scan_code"
 
 
 def read_hook_input() -> dict:
@@ -128,7 +130,14 @@ def _analyze_entry(entry, _depth=0) -> tuple[bool, bool]:
                 has_write = True
 
         # Check for scan_code tool_result with ALLOW
-        if entry.get("type") == "tool_result" and entry.get("name") in SCAN_TOOL_NAMES:
+        # Use substring match: plugin namespacing prefixes tool names
+        entry_name = str(entry.get("name", ""))
+        entry_tool_name = str(entry.get("tool_name", ""))
+        is_scan_result = (
+            entry.get("type") == "tool_result"
+            and SCAN_TOOL_KEYWORD in entry_name
+        )
+        if is_scan_result:
             content = entry.get("content", "")
             if isinstance(content, str) and "ALLOW" in content:
                 has_allow = True
@@ -138,7 +147,7 @@ def _analyze_entry(entry, _depth=0) -> tuple[bool, bool]:
                         has_allow = True
 
         # Also check for scan_code in tool_name + result patterns
-        if entry.get("tool_name") in SCAN_TOOL_NAMES:
+        if SCAN_TOOL_KEYWORD in entry_tool_name:
             result = entry.get("result", entry.get("tool_result", ""))
             if isinstance(result, str) and "ALLOW" in result:
                 has_allow = True
