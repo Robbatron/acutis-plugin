@@ -1,6 +1,6 @@
 {
   "name": "acutis",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Zero Trust security verification for AI-generated code. Formally verifies code for XSS (CWE-79) and SQL Injection (CWE-89) using property lattice verification — the AI declares security semantics, Acutis verifies them.",
   "author": {
     "name": "Robert Delfs",
