@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-Acutis Stop Hook — safety net for Claude Code.
+Acutis Stop Hook — works in both Claude Code and Cursor.
 
-Blocks the agent from completing if it wrote security-relevant code
+Safety net: blocks the agent from completing if it wrote security-relevant code
 that hasn't been verified via scan_code. If the agent already called scan_code
 and got ALLOW after its last edit, the hook is invisible.
 
 The hook does NOT invoke Acutis directly — it only reads the transcript to
 determine whether scan_code was called. The agent calls scan_code via MCP.
 
-Hook protocol:
+Environment detection:
+  - Claude Code: hook_input has "stop_hook_active" key; output {"decision": "block"}
+  - Cursor: hook_input has "hook_event_name" key; output {"followup_message": "..."}
+
+Hook protocol (both environments):
   - stdin: JSON with transcript_path, etc.
   - stdout: JSON response
   - exit 0: allow (parse stdout for JSON)
@@ -40,6 +44,17 @@ WRITE_TOOLS = {"Write", "Edit", "write", "edit", "editFiles", "createFile"}
 # Substring match — plugin namespacing can prefix tool names
 # (e.g. "plugin:acutis:mcp__acutis__scan_code")
 SCAN_TOOL_KEYWORD = "scan_code"
+
+
+def detect_environment(hook_input: dict) -> str:
+    """Detect whether we're running in Claude Code or Cursor.
+
+    Claude Code sends: stop_hook_active, session_id
+    Cursor sends: hook_event_name, cursor_version, conversation_id
+    """
+    if "hook_event_name" in hook_input or "cursor_version" in hook_input:
+        return "cursor"
+    return "claude"
 
 
 def read_hook_input() -> dict:
@@ -88,6 +103,7 @@ def analyze_transcript(transcript_path: str) -> tuple[bool, bool]:
                 except json.JSONDecodeError:
                     continue
 
+                # Check for writes and scan results in this entry
                 writes, allow = _analyze_entry(entry)
                 if writes:
                     last_security_write_idx = idx
@@ -174,9 +190,14 @@ def _analyze_entry(entry, _depth=0) -> tuple[bool, bool]:
 def main() -> None:
     """Main hook entry point."""
     hook_input = read_hook_input()
+    env = detect_environment(hook_input)
 
-    # Guard: prevent infinite loops (Claude Code sets stop_hook_active)
+    # Guard: prevent infinite loops
+    # Claude Code: stop_hook_active flag
+    # Cursor: loop_count field (max 5 enforced by Cursor itself)
     if hook_input.get("stop_hook_active", False):
+        sys.exit(0)
+    if hook_input.get("loop_count", 0) >= 3:
         sys.exit(0)
 
     transcript_path = hook_input.get("transcript_path", "")
@@ -187,14 +208,18 @@ def main() -> None:
         sys.exit(0)
 
     # Block: unverified security-relevant code exists
-    response = {
-        "decision": "block",
-        "reason": (
-            "Security-relevant code was written but not yet verified. "
-            "Call mcp__acutis__scan_code with the code and a PCST contract. "
-            "Fix any BLOCK results before completing."
-        ),
-    }
+    message = (
+        "Security-relevant code was written but not yet verified. "
+        "Call mcp__acutis__scan_code with the code and a PCST contract. "
+        "Fix any BLOCK results before completing."
+    )
+
+    if env == "cursor":
+        # Cursor: followup_message triggers a new turn
+        response = {"followup_message": message}
+    else:
+        # Claude Code: decision/reason blocks the stop
+        response = {"decision": "block", "reason": message}
 
     json.dump(response, sys.stdout)
     sys.stdout.write("\n")
